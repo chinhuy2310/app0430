@@ -25,7 +25,8 @@
             android:label="Article Details"/>
         <activity android:name=".SignUpActivity" />
         <activity android:name=".AddPostActivity"
-            android:label="Share or Create Recipe"/>
+            android:label="Share or Create Recipe"
+            android:windowSoftInputMode="adjustPan"/>
         <activity android:name=".Menu1Fragment"/>
         <activity android:name=".Menu5Fragment"/>
         <activity android:name=".Menu2Fragment"/>

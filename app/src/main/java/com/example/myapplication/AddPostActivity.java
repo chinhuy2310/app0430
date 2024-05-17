@@ -2,7 +2,9 @@ package com.example.myapplication;
 
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -21,6 +23,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.myapplication.adapter.SelectedImageAdapter;
 import com.example.myapplication.adapter.spinnerAdapter;
 import com.example.myapplication.data.DatabaseHelper;
 import com.example.myapplication.model.ItemData;
@@ -31,6 +34,7 @@ import java.util.List;
 
 public class AddPostActivity extends AppCompatActivity {
 
+    private static final int PICK_IMAGE_REQUEST = 1;
     private CheckBox checkBoxIsRecipe;
     private EditText editTextTitle;
     private EditText editTextContent;
@@ -86,7 +90,15 @@ public class AddPostActivity extends AppCompatActivity {
                 return false;
             }
         });
-
+        buttonChooseImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); // Cho phép chọn nhiều ảnh
+                startActivityForResult(intent, PICK_IMAGE_REQUEST);
+            }
+        });
         // Thiết lập layout manager cho RecyclerView
         LinearLayoutManager layoutManager = new LinearLayoutManager(this);
         layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
@@ -144,7 +156,60 @@ public class AddPostActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
+            if (data.getClipData() != null) {
+                // Nếu người dùng đã chọn nhiều ảnh
+                int count = data.getClipData().getItemCount();
+                List<Uri> imageUris = new ArrayList<>();
+                for (int i = 0; i < count; i++) {
+                    Uri imageUri = data.getClipData().getItemAt(i).getUri();
+                    imageUris.add(imageUri);
+                    // Xử lý ảnh được chọn ở đây, ví dụ: hiển thị nó lên ImageView
+                    // Đồng thời, bạn cũng có thể lưu đường dẫn của ảnh vào cơ sở dữ liệu nếu cần
+                    // Ví dụ:
+                    // String imagePath = imageUri.getPath();
+                    // databaseHelper.insertImage(imagePath);
+                }
+                displaySelectedImages(imageUris);
+            } else if (data.getData() != null) {
+                // Nếu người dùng chỉ chọn một ảnh
+                Uri imageUri = data.getData();
+                List<Uri> imageUris = new ArrayList<>();
+                imageUris.add(imageUri);
+                // Xử lý ảnh được chọn ở đây, ví dụ: hiển thị nó lên ImageView
+                // Đồng thời, bạn cũng có thể lưu đường dẫn của ảnh vào cơ sở dữ liệu nếu cần
+                // Ví dụ:
+                // String imagePath = imageUri.getPath();
+                // databaseHelper.insertImage(imagePath);
+                displaySelectedImages(imageUris);
+            }
+        }
+    }
+    private void displaySelectedImages(List<Uri> imageUris) {
+        List<String> imagePaths = new ArrayList<>();
+        for (Uri uri : imageUris) {
+            // Lấy đường dẫn của ảnh và thêm vào danh sách
+            String imagePath = uri.toString();
+            imagePaths.add(imagePath);
+        }
+        if (!imagePaths.isEmpty()) {
+            // Tạo adapter và thiết lập cho RecyclerView
+            SelectedImageAdapter adapter1 = new SelectedImageAdapter(this, imagePaths);
+            adapter1.setOnListEmptyListener(new SelectedImageAdapter.OnListEmptyListener() {
+                @Override
+                public void onListEmpty() {
+                    imageViewSelected.setVisibility(View.GONE);
+                }
+            });
+            imageViewSelected.setAdapter(adapter1);
+            imageViewSelected.setVisibility(View.VISIBLE);
+        } else {
+            imageViewSelected.setVisibility(View.GONE);
+        }
+    }
     private void showCancelConfirmationDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Confirm Cancel Post");
@@ -177,5 +242,6 @@ public class AddPostActivity extends AppCompatActivity {
         // Add data for other items here
         return itemgridList;
     }
+
 
 }
